@@ -11,14 +11,14 @@ struct ContentView: View {
     var body: some View {
             ZStack {
                 Rectangle().foregroundColor(.black)
-                MyView()
+				ViewToFilter()
+					.applyFilter(CIFilter(name:"CIBumpDistortion", parameters: ["inputRadius" : 1000.0, "inputCenter" : CIVector(x: 400, y: 200)])!)
             }.ignoresSafeArea(.all)
     }
 }
 
-struct FilteredView: View {
+struct ViewToFilter: View {
     var body: some View{
-        //Image(systemName: "gamecontroller").resizable().aspectRatio(contentMode: .fit).foregroundColor(.red).frame(width: 100, height: 100)
             List {
                 ForEach(0..<50) {
                     i in
@@ -34,18 +34,24 @@ struct FilteredView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+extension View {
+	func applyFilter(_ filter: CIFilter) -> some View {
+		FilterThroughNSViewRepresentable(viewToFilter: AnyView(self), filterToApply: filter)
+	}
 }
 
-final class MyView: NSViewRepresentable {
+struct FilterThroughNSViewRepresentable: NSViewRepresentable {
+	var viewToFilter: AnyView
+	var filter: CIFilter
+	
+	init(viewToFilter: AnyView, filterToApply: CIFilter) {
+		self.viewToFilter = viewToFilter
+		self.filter = filterToApply
+	}
+	
     func makeNSView(context: Context) -> NSView {
-        let view = NSHostingView(rootView: FilteredView())
+        let view = NSHostingView(rootView: viewToFilter)
         let layer = view.layer!
-//        let filter = CIFilter(name:"CIGaussianBlur", parameters: ["inputRadius" : 1.0])!
-        let filter = CIFilter(name:"CIBumpDistortion", parameters: ["inputRadius" : 1000.0, "inputCenter" : CIVector(x: 400, y: 200)])!
         layer.filters = [filter]
         view.layer = layer
         return view
@@ -53,4 +59,11 @@ final class MyView: NSViewRepresentable {
     
     func updateNSView(_ nsView: NSView, context: Context) {
     }
+}
+
+
+struct ContentView_Previews: PreviewProvider {
+	static var previews: some View {
+		ContentView()
+	}
 }
